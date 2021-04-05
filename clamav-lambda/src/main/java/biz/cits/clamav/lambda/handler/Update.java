@@ -30,16 +30,16 @@ public class Update implements RequestHandler<Map<String, String>, String> {
                 case "update":
                     response = Clamav.update();
                     System.out.println("Uploading Defs to S3");
-                    s3.uploadFolder("clamav-out", "clamav_defs", "/tmp/clamav_defs");
+                    s3.uploadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp/clamav_defs");
                     logger.log("Defs uploaded to S3");
                     break;
                 case "scan":
-                    s3.downloadFolder("clamav-out", "clamav_defs", "/tmp");
+                    s3.downloadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp");
                     response = Clamav.scan(event.get("file"));
                     break;
                 case "upload":
                     System.out.println("Uploading Defs to S3");
-                    s3.uploadFolder("clamav-out", "virus-def", "/tmp");
+                    s3.uploadFolder(System.getenv("storeBucket"), "virus-def", "/tmp");
                     logger.log("Defs uploaded to S3");
                     break;
             }
