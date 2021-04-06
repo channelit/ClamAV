@@ -1,6 +1,6 @@
 
 ### App to scan files on S3 with ClamAV virus scanner using AWS Lambda deployed in Docker Container
-
+![Architecture](images/ClamAV.png "Architecture")
 #### Build image
 ```
 mvn compile dependency:copy-dependencies -DincludeScope=runtime
