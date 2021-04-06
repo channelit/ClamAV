@@ -16,6 +16,7 @@ curl -XPOST "http://localhost:9009/2015-03-31/functions/function/invocations" -d
 #### Push to AWS
 ```
 docker tag clamav-lambda:latest 122936777114.dkr.ecr.us-east-1.amazonaws.com/clamav-lambda:latest
+aws --region us-east-1 ecr get-login-password | docker login --username AWS --password-stdin 122936777114.dkr.ecr.us-east-1.amazonaws.com/clamav-lambda:latest
 docker push 122936777114.dkr.ecr.us-east-1.amazonaws.com/clamav-lambda:latest
 ```
 
