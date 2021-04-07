@@ -1,7 +1,7 @@
-package biz.cits.clamav.lambda.handler;
+package clamav.lambda.handler;
 
-import biz.cits.clamav.lambda.Clamav;
-import biz.cits.clamav.lambda.S3Operations;
+import clamav.lambda.Clamav;
+import clamav.lambda.S3Operations;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;

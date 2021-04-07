@@ -1,4 +1,4 @@
-package biz.cits.clamav.lambda;
+package clamav.lambda;
 
 import org.junit.jupiter.api.Test;
 

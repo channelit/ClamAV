@@ -1,4 +1,4 @@
-package biz.cits.clamav.lambda;
+package clamav.lambda;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

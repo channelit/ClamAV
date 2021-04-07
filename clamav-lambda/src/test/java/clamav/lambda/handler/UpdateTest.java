@@ -1,4 +1,4 @@
-package biz.cits.clamav.lambda.handler;
+package clamav.lambda.handler;
 
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;

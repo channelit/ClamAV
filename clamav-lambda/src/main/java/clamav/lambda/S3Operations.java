@@ -1,4 +1,4 @@
-package biz.cits.clamav.lambda;
+package clamav.lambda;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -36,11 +36,18 @@ public class S3Operations {
                 .build();
     }
 
+    public S3Operations() {
+        s3client = AmazonS3ClientBuilder
+                .standard()
+                .withRegion(Regions.US_EAST_1)
+                .build();
+    }
+
     public void downloadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
         TransferManager tm = TransferManagerBuilder.standard().withS3Client(s3client).build();
         System.out.println("Downloading folder.");
         MultipleFileDownload download = tm.downloadDirectory(bucketName, prefix, new File(folderPath), true);
-        download.addProgressListener((ProgressListener) progressEvent -> logger.info("Donload status update: {}", progressEvent));
+        download.addProgressListener((ProgressListener) progressEvent -> logger.info("Download status update: {}", progressEvent));
         download.waitForCompletion();
         System.out.println("Done downloading folder");
     }
@@ -72,6 +79,10 @@ public class S3Operations {
         }
         s3client.createBucket(bucketName);
         s3client.putObject(bucketName, key, new File(filePath));
+    }
+
+    public AmazonS3 getS3client(){
+        return this.s3client;
     }
 
 }
