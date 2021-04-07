@@ -7,15 +7,13 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.tests.EventLoader;
 import org.junit.Test;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
 public class S3Test {
 
     @Test
-    public void testS3Event() throws IOException {
+    public void testS3Event() {
 
         S3Event s3Event = EventLoader.loadS3Event("events/s3events.json");
         S3 handler = new S3();
