@@ -39,31 +39,30 @@ public class S3 implements RequestHandler<S3Event, String> {
             S3Operations srcS3 = new S3Operations();
             S3Operations dstS3 = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"));
             S3Operations storeS3 = new S3Operations(System.getenv("s3storeAccessKey"), System.getenv("s3storeSecretKey"));
-            setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
-            setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
-
             if (hasTag(srcS3.getS3client(), srcBucket, srcKey, "scan")) {
                 logger.info("Skipping file:" + srcKey);
                 return "skipped";
             }
+            setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
+//            setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
             String filePath = "/tmp/" + srcKey;
             srcS3.downloadObject(srcBucket, srcKey, filePath);
             storeS3.downloadFolder(storeBucket, "clamav_defs", "/tmp");
 
             String result = Clamav.scan(filePath);
-            logger.info("Writing to: " + "/" + dstKey);
+            logger.info("result:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
             if (convertedObject.get("Infected files").getAsString().equals("0")) {
                 dstS3.uploadObject(dstBucket, dstKey, filePath);
                 setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
-                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
+//                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
                 setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
-                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
+//                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
-            logger.info("Successfully scanned file " + srcBucket + "/"
-                    + srcKey + " and uploaded to " + "/" + dstKey);
+            logger.info("Successfully scanned file " + srcBucket + "/" + srcKey + " and uploaded to " + "/" + dstKey);
             Boolean clearFile = new File(filePath).delete();
+            logger.info("Temp file deleted:" + clearFile);
             return "Ok";
         } catch (Exception e) {
             throw new RuntimeException(e);
