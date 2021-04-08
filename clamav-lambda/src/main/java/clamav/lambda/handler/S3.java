@@ -35,12 +35,17 @@ public class S3 implements RequestHandler<S3Event, String> {
             String srcKey = record.getS3().getObject().getUrlDecodedKey();
             String dstKey = "scanned-" + srcKey;
 
+
             S3Operations srcS3 = new S3Operations();
             S3Operations dstS3 = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"));
             S3Operations storeS3 = new S3Operations(System.getenv("s3storeAccessKey"), System.getenv("s3storeSecretKey"));
             setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
             setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
 
+            if (hasTag(srcS3.getS3client(), srcBucket, srcKey, "scan")) {
+                logger.info("Skipping file:" + srcKey);
+                return "skipped";
+            }
             String filePath = "/tmp/" + srcKey;
             srcS3.downloadObject(srcBucket, srcKey, filePath);
             storeS3.downloadFolder(storeBucket, "clamav_defs", "/tmp");
@@ -63,6 +68,20 @@ public class S3 implements RequestHandler<S3Event, String> {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean hasTag(AmazonS3 s3client, String srcBucket, String srcKey, String tagKey) {
+        GetObjectTaggingRequest getTaggingRequest = new GetObjectTaggingRequest(srcBucket, srcKey);
+        GetObjectTaggingResult getTagsResult = s3client.getObjectTagging(getTaggingRequest);
+        List<Tag> objTags = getTagsResult.getTagSet();
+        AtomicReference<Boolean> hasTag = new AtomicReference<>(false);
+        objTags.forEach(t -> {
+                    if (t.getKey().equals(tagKey)) {
+                        hasTag.set(true);
+                    }
+                }
+        );
+        return hasTag.get();
     }
 
     private void setTag(AmazonS3 s3client, String srcBucket, String srcKey, Map<String, String> tags) {
