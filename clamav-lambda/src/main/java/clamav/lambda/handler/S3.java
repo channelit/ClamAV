@@ -3,6 +3,7 @@ package clamav.lambda.handler;
 import clamav.lambda.Clamav;
 import clamav.lambda.S3Operations;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.s3.AmazonS3;
@@ -20,13 +21,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class S3 implements RequestHandler<S3Event, String> {
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();
-    private static final Logger logger = LoggerFactory.getLogger(S3.class);
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();;
 
     @Override
     public String handleRequest(S3Event s3event, Context context) {
         try {
-            logger.info("EVENT: " + gson.toJson(s3event));
+            LambdaLogger logger = context.getLogger();
+            logger.log("EVENT: " + gson.toJson(s3event));
             S3EventNotification.S3EventNotificationRecord record = s3event.getRecords().get(0);
 
             String srcBucket = record.getS3().getBucket().getName();
@@ -40,7 +41,7 @@ public class S3 implements RequestHandler<S3Event, String> {
             S3Operations dstS3 = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"));
             S3Operations storeS3 = new S3Operations(System.getenv("s3storeAccessKey"), System.getenv("s3storeSecretKey"));
             if (hasTag(srcS3.getS3client(), srcBucket, srcKey, "scan")) {
-                logger.info("Skipping file:" + srcKey);
+                logger.log("Skipping file:" + srcKey);
                 return "skipped";
             }
             setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
@@ -50,7 +51,7 @@ public class S3 implements RequestHandler<S3Event, String> {
             storeS3.downloadFolder(storeBucket, "clamav_defs", "/tmp");
 
             String result = Clamav.scan(filePath);
-            logger.info("result:" + result);
+            logger.log("result:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
             if (convertedObject.get("Infected files").getAsString().equals("0")) {
                 dstS3.uploadObject(dstBucket, dstKey, filePath);
@@ -60,9 +61,9 @@ public class S3 implements RequestHandler<S3Event, String> {
                 setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
 //                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
-            logger.info("Successfully scanned file " + srcBucket + "/" + srcKey + " and uploaded to " + "/" + dstKey);
+            logger.log("Successfully scanned file " + srcBucket + "/" + srcKey + " and uploaded to " + "/" + dstKey);
             Boolean clearFile = new File(filePath).delete();
-            logger.info("Temp file deleted:" + clearFile);
+            logger.log("Temp file deleted:" + clearFile);
             return "Ok";
         } catch (Exception e) {
             throw new RuntimeException(e);

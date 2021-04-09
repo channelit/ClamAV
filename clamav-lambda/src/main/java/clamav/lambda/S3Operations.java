@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class S3Operations {
 
@@ -61,7 +62,9 @@ public class S3Operations {
     public void downloadObject(String bucketName, String srcFilePath, String dstFilePath) throws IOException {
         S3Object s3object = s3client.getObject(bucketName, srcFilePath);
         S3ObjectInputStream inputStream = s3object.getObjectContent();
-        Files.copy(inputStream, new File(dstFilePath).toPath());
+        Path dst = new File(dstFilePath).toPath();
+        Files.createDirectories(dst.getParent());
+        Files.copy(inputStream, dst);
     }
 
     public void uploadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
