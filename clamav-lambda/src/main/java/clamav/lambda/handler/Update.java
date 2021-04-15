@@ -9,6 +9,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 public class Update implements RequestHandler<Map<String, String>, String> {
@@ -24,24 +27,29 @@ public class Update implements RequestHandler<Map<String, String>, String> {
         // process event
         logger.log("EVENT: " + gson.toJson(event));
         logger.log("EVENT TYPE: " + event.getClass());
-        S3Operations s3 = new S3Operations(System.getenv("s3storeAccessKey"), System.getenv("s3storeSecretKey"));
+        S3Operations s3 = new S3Operations();
         try {
+            String folder = "/tmp";
+            if (System.getenv().containsKey("folder")) {
+                folder = System.getenv("folder");
+            }
+            logger.log("Using folder:" + folder);
+            String defFolder = folder + "/clamav_defs";
             switch (event.get("task")) {
                 case "update":
-                    response = Clamav.update();
-                    logger.log("Uploading Defs to S3");
-                    s3.uploadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp/clamav_defs");
-                    logger.log("Defs uploaded to S3");
+                    logger.log("Updating virus definitions");
+                    response = Clamav.update(defFolder);
+                    logger.log("Virus definitions are updated");
+                    if (System.getenv().containsKey("upload_to_s3")) {
+                        logger.log("Uploading Defs to S3");
+                        s3.uploadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp/clamav_defs");
+                        logger.log("Defs uploaded to S3");
+                    }
                     break;
                 case "scan":
                     s3.downloadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp");
-                    response = Clamav.scan(event.get("file"));
+                    response = Clamav.scan(event.get("file"), defFolder);
                     logger.log("Response: " + response);
-                    break;
-                case "upload":
-                    System.out.println("Uploading Defs to S3");
-                    s3.uploadFolder(System.getenv("storeBucket"), "virus-def", "/tmp");
-                    logger.log("Defs uploaded to S3");
                     break;
             }
         } catch (IOException | InterruptedException e) {

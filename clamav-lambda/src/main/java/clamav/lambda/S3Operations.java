@@ -45,11 +45,11 @@ public class S3Operations {
 
     public void downloadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
         TransferManager tm = TransferManagerBuilder.standard().withS3Client(s3client).build();
-        System.out.println("Downloading folder.");
+        System.out.println("Downloading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
         MultipleFileDownload download = tm.downloadDirectory(bucketName, prefix, new File(folderPath), true);
         download.addProgressListener((ProgressListener) progressEvent -> logger.info("Download status update: {}", progressEvent));
         download.waitForCompletion();
-        System.out.println("Done downloading folder");
+        System.out.println("Done downloading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
     }
 
     public void deleteFolder(String bucketName, String folderPath) throws InterruptedException {
@@ -59,20 +59,21 @@ public class S3Operations {
     }
 
     public void downloadObject(String bucketName, String srcFilePath, String dstFilePath) throws IOException {
+        Path dst = new File(dstFilePath).toPath();
+        Files.deleteIfExists(dst);
         S3Object s3object = s3client.getObject(bucketName, srcFilePath);
         S3ObjectInputStream inputStream = s3object.getObjectContent();
-        Path dst = new File(dstFilePath).toPath();
         Files.createDirectories(dst.getParent());
         Files.copy(inputStream, dst);
     }
 
     public void uploadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
         TransferManager tm = TransferManagerBuilder.standard().withS3Client(s3client).build();
-        System.out.println("Uploading folder.");
+        System.out.println("Uploading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
         MultipleFileUpload upload = tm.uploadDirectory(bucketName, prefix, new File(folderPath), true);
         upload.addProgressListener((ProgressListener) progressEvent -> logger.info("Upload status update: {}", progressEvent));
         upload.waitForCompletion();
-        System.out.println("Done uploading folder");
+        System.out.println("Done uploading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
     }
 
     public void uploadObject(String bucketName, String key, String filePath) {

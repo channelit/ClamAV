@@ -12,16 +12,17 @@ import com.amazonaws.services.s3.model.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class S3 implements RequestHandler<S3Event, String> {
-    Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public String handleRequest(S3Event s3event, Context context) {
@@ -36,29 +37,44 @@ public class S3 implements RequestHandler<S3Event, String> {
             String srcKey = record.getS3().getObject().getUrlDecodedKey();
             String dstKey = "scanned-" + srcKey;
 
-
-            S3Operations srcS3 = new S3Operations();
-            S3Operations dstS3 = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"));
-            S3Operations storeS3 = new S3Operations(System.getenv("s3storeAccessKey"), System.getenv("s3storeSecretKey"));
-            if (hasTag(srcS3.getS3client(), srcBucket, srcKey, "scan")) {
+            S3Operations s3Ops = new S3Operations();
+            if (hasTag(s3Ops.getS3client(), srcBucket, srcKey, "scan")) {
                 logger.log("Skipping file:" + srcKey);
                 return "skipped";
             }
-            setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
+            setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
 //            setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
-            String filePath = "/tmp/" + srcKey;
-            srcS3.downloadObject(srcBucket, srcKey, filePath);
-            storeS3.downloadFolder(storeBucket, "clamav_defs", "/tmp");
 
-            String result = Clamav.scan(filePath);
+            String folder = "/tmp";
+            if (System.getenv().containsKey("folder")) {
+                folder = System.getenv("folder");
+            }
+            logger.log("Using folder:" + folder);
+            String defFolder = folder + "/clamav_defs";
+            logger.log("Using definition folder:" + defFolder);
+            String filePath = folder + "/" + srcKey;
+            s3Ops.downloadObject(srcBucket, srcKey, filePath);
+            logger.log("Downloaded file:" + filePath);
+
+            if (System.getenv().containsKey("useS3")) {
+                s3Ops.downloadFolder(storeBucket, "clamav_defs", "/tmp");
+                logger.log("Downloaded definitions from S3 to folder:" + folder);
+            } else if (Files.notExists(Paths.get(defFolder))) {
+                logger.log("Definitions not found. Downloading from mirror to folder:" + defFolder);
+                Files.createDirectories(Path.of(defFolder));
+                String response = Clamav.update(defFolder);
+                logger.log(response);
+            }
+
+            String result = Clamav.scan(filePath, defFolder);
             logger.log("result:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
             if (convertedObject.get("Infected files").getAsString().equals("0")) {
-                dstS3.uploadObject(dstBucket, dstKey, filePath);
-                setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
+//                s3Ops.uploadObject(dstBucket, dstKey, filePath);
+                setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
 //                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
-                setTag(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
+                setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
 //                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
             logger.log("Successfully scanned file " + srcBucket + "/" + srcKey + " and uploaded to " + "/" + dstKey);
