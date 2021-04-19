@@ -32,12 +32,18 @@ aws s3api list-objects-v2 --bucket clamav-out
 aws s3api put-object --bucket clamav-out --key test/test --body /usr/local/bin/aws_completer
 ```
 
-### Stats
+### Comparison of S3 and EFS for storing virus definitions
 #### Definitions update and upload to S3
 ###### Duration: 9887.95 ms Billed Duration: 11545 ms Memory Size: 2128 MB Max Memory Used: 433 MB Init Duration: 1656.91 ms
+
 #### Scanning 3MB file from S3 Event using definitions from S3
+###### Duration: 57538.53 ms	Billed Duration: 59303 ms	Memory Size: 2128 MB	Max Memory Used: 1692 MB	Init Duration: 1763.97 ms
 
 #### Scanning 3MB file from S3 Event using definitions from EFS
+###### Duration: 28216.84 ms	Billed Duration: 29555 ms	Memory Size: 2128 MB	Max Memory Used: 1556 MB	Init Duration: 1337.79 ms
+
 #### Scanning 600MB file from S3 Event using definitions from S3
+###### Duration: 70484.66 ms	Billed Duration: 70485 ms	Memory Size: 2128 MB	Max Memory Used: 2128 MB
 
 #### Scanning 600MB file from S3 Event using definitions from EFS
+###### Duration: 37561.96 ms	Billed Duration: 37562 ms	Memory Size: 2128 MB	Max Memory Used: 2128 MB 

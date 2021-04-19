@@ -56,6 +56,7 @@ public class S3 implements RequestHandler<S3Event, String> {
             logger.log("Downloaded file:" + filePath);
 
             if (System.getenv().containsKey("useS3") && System.getenv("useS3").equalsIgnoreCase("true")) {
+                logger.log("Using definitions from S3 : " + System.getenv("useS3"));
                 String storeBucket = System.getenv("storeBucket");
                 logger.log("Downloading definitions from S3 to folder:" + folder);
                 s3Ops.downloadFolder(storeBucket, "clamav_defs", folder);
