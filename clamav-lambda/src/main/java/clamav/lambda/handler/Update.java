@@ -40,14 +40,20 @@ public class Update implements RequestHandler<Map<String, String>, String> {
                     logger.log("Updating virus definitions");
                     response = Clamav.update(defFolder);
                     logger.log("Virus definitions are updated");
-                    if (System.getenv().containsKey("upload_to_s3")) {
-                        logger.log("Uploading Defs to S3");
-                        s3.uploadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp/clamav_defs");
+                    if (System.getenv().containsKey("useS3") && System.getenv("useS3").equalsIgnoreCase("true")) {
+                        String storeBucket = System.getenv("storeBucket");
+                        logger.log("Uploading Defs to S3 bucket:" + storeBucket);
+                        s3.uploadFolder(storeBucket, "clamav_defs", defFolder);
                         logger.log("Defs uploaded to S3");
                     }
                     break;
                 case "scan":
-                    s3.downloadFolder(System.getenv("storeBucket"), "clamav_defs", "/tmp");
+                    if (System.getenv().containsKey("useS3") && System.getenv("useS3").equalsIgnoreCase("true")) {
+                        String storeBucket = System.getenv("storeBucket");
+                        logger.log("Downloading definitions from S3 to folder:" + folder);
+                        s3.downloadFolder(storeBucket, "clamav_defs", folder);
+                        logger.log("Downloaded definitions from S3 to folder:" + folder);
+                    }
                     response = Clamav.scan(event.get("file"), defFolder);
                     logger.log("Response: " + response);
                     break;

@@ -33,7 +33,6 @@ public class S3 implements RequestHandler<S3Event, String> {
 
             String srcBucket = record.getS3().getBucket().getName();
             String dstBucket = System.getenv("dstBucket");
-            String storeBucket = System.getenv("storeBucket");
             String srcKey = record.getS3().getObject().getUrlDecodedKey();
             String dstKey = "scanned-" + srcKey;
 
@@ -52,18 +51,22 @@ public class S3 implements RequestHandler<S3Event, String> {
             logger.log("Using folder:" + folder);
             String defFolder = folder + "/clamav_defs";
             logger.log("Using definition folder:" + defFolder);
-            String filePath = folder + "/" + srcKey;
+            String filePath = folder + "/" + srcKey.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
             s3Ops.downloadObject(srcBucket, srcKey, filePath);
             logger.log("Downloaded file:" + filePath);
 
-            if (System.getenv().containsKey("useS3")) {
-                s3Ops.downloadFolder(storeBucket, "clamav_defs", "/tmp");
+            if (System.getenv().containsKey("useS3") && System.getenv("useS3").equalsIgnoreCase("true")) {
+                String storeBucket = System.getenv("storeBucket");
+                logger.log("Downloading definitions from S3 to folder:" + folder);
+                s3Ops.downloadFolder(storeBucket, "clamav_defs", folder);
                 logger.log("Downloaded definitions from S3 to folder:" + folder);
             } else if (Files.notExists(Paths.get(defFolder))) {
                 logger.log("Definitions not found. Downloading from mirror to folder:" + defFolder);
                 Files.createDirectories(Path.of(defFolder));
                 String response = Clamav.update(defFolder);
                 logger.log(response);
+            } else {
+                logger.log("Using existing virus definitions in folder:" + defFolder);
             }
 
             String result = Clamav.scan(filePath, defFolder);

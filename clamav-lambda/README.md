@@ -3,7 +3,7 @@
 ![Architecture](images/ClamAV.png "Architecture")
 #### Build image
 ```
-mvn compile dependency:copy-dependencies -DincludeScope=runtime
+mvn clean compile dependency:copy-dependencies -DincludeScope=runtime
 docker build -t clamav-lambda .
 ```
 #### Run local
@@ -26,8 +26,18 @@ storeBucket=clamav-out
 dstBucket=clamav-out
 ```
 ### AWS Cli test for uploading file to S3
-```aidl
+```
 aws configure
 aws s3api list-objects-v2 --bucket clamav-out
 aws s3api put-object --bucket clamav-out --key test/test --body /usr/local/bin/aws_completer
 ```
+
+### Stats
+#### Definitions update and upload to S3
+###### Duration: 9887.95 ms Billed Duration: 11545 ms Memory Size: 2128 MB Max Memory Used: 433 MB Init Duration: 1656.91 ms
+#### Scanning 3MB file from S3 Event using definitions from S3
+
+#### Scanning 3MB file from S3 Event using definitions from EFS
+#### Scanning 600MB file from S3 Event using definitions from S3
+
+#### Scanning 600MB file from S3 Event using definitions from EFS
