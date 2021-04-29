@@ -6,14 +6,14 @@ RUN yum install -y clamd
 
 FROM amazon/aws-lambda-java
 
-ARG LAMBDA_TASK_ROOT="/var/task"
-
-RUN yum install -y ca-certificates
+ENV LAMBDA_TASK_ROOT="/var/task"
 
 COPY --from=clam-build /usr/bin/clamscan ${LAMBDA_TASK_ROOT}
 COPY --from=clam-build /usr/bin/freshclam ${LAMBDA_TASK_ROOT}
-COPY --from=clam-build /usr/bin/*.so.* ${LAMBDA_TASK_ROOT}/
+COPY --from=clam-build /usr/lib64/*.so.* ${LAMBDA_TASK_ROOT}/
 COPY --from=clam-build /etc/pki/ca-trust/source/anchors/* /etc/pki/ca-trust/source/anchors/
+
+RUN yum install -y ca-certificates
 RUN update-ca-trust
 RUN update-ca-trust force-enable
 

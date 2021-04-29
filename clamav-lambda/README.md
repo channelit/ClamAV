@@ -5,10 +5,12 @@
 ```
 mvn clean compile dependency:copy-dependencies -DincludeScope=runtime
 docker build -t clamav-lambda .
+// For Apple Silicon
+docker build -t --platform=linux/amd64 clamav-lambda .
 ```
 #### Run local
 ```
-docker run -e s3dstSecretKey=$s3dstSecretKey -e s3dstAccessKey=$s3dstAccessKey --name=lambda -p 9009:8080 clamav-lambda biz.cits.clamav.lambda.handler.Update
+docker run -e s3dstSecretKey=$s3dstSecretKey -e s3dstAccessKey=$s3dstAccessKey --name=lambda --user 1001 -p 9009:8080 clamav-lambda clamav.lambda.handler.Update
 curl -XPOST "http://localhost:9009/2015-03-31/functions/function/invocations" -d '{"task":"update"}'
 docker cp src/test/resources/eicar/ lambda:/var/task/eicar
 curl -XPOST "http://localhost:9009/2015-03-31/functions/function/invocations" -d '{"task":"scan", "file":"eicar"}'
