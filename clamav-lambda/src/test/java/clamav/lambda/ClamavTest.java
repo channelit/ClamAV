@@ -1,8 +1,16 @@
 package clamav.lambda;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.junit.jupiter.api.Test;
 
 public class ClamavTest {
+
+    @Test
+    public void testGson() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        System.out.println(gson.toJson("{\"Scannned\":\"something\"}"));
+    }
 
     @Test
     public void testResultToJson(){

@@ -38,8 +38,8 @@ public class S3 implements RequestHandler<S3Event, String> {
 
             S3Operations s3Ops = new S3Operations();
             if (hasTag(s3Ops.getS3client(), srcBucket, srcKey, "scan")) {
-                logger.log("Skipping file:" + srcKey);
-                return "skipped";
+                logger.log(gson.toJson("Skipping:" + srcKey));
+                return "skipped:" + srcKey;
             }
             setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
 //            setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
@@ -81,7 +81,7 @@ public class S3 implements RequestHandler<S3Event, String> {
                 setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
 //                setMeta(srcS3.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
-            logger.log("Successfully scanned file " + srcBucket + "/" + srcKey + " and uploaded to " + "/" + dstKey);
+            logger.log(gson.toJson("Scanned:" + srcKey));
             Boolean clearFile = new File(filePath).delete();
             logger.log("Temp file deleted:" + clearFile);
             return "Ok";
