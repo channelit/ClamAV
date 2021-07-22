@@ -13,16 +13,22 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Scanner {
-    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();;
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+    LambdaLogger logger;
 
-    public static String scan(Context context, String srcBucket, String srcKey) {
+    public Scanner(Context context){
+        this.logger = context.getLogger();
+    }
+
+    public String scan(String srcBucket, String srcKey) {
         try {
-            LambdaLogger logger = context.getLogger();
             S3Operations s3Ops = new S3Operations();
             if (hasTag(s3Ops.getS3client(), srcBucket, srcKey, "scan")) {
                 logger.log(gson.toJson("Skipping:" + srcKey));

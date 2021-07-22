@@ -70,9 +70,10 @@ public class Update implements RequestHandler<Map<String, String>, String> {
                     }
                     S3Operations s3Ops = new S3Operations();
                     AmazonS3 client = s3Ops.getS3client();
+                    Scanner scanner = new Scanner(context);
                     for ( S3ObjectSummary summary : S3Objects.withPrefix(client, event.get("bucket"), event.get("folder")) ) {
                         System.out.printf("Scanning key '%s'\n", summary.getKey());
-                        Scanner.scan(context,event.get("bucket"),summary.getKey());
+                        scanner.scan(event.get("bucket"),summary.getKey());
                     }
                     response = Clamav.scan(event.get("file"), defFolder);
                     logger.log("Response: " + response);

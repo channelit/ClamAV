@@ -7,6 +7,7 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -76,6 +77,14 @@ public class S3Operations {
         System.out.println("Done uploading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
     }
 
+    public void mooveObject(String bucketName, String srcKey, String oldFolderPath, String dstKey) throws InterruptedException {
+
+        CopyObjectRequest copyObjRequest = new CopyObjectRequest(bucketName, srcKey, bucketName, dstKey);
+        s3client.copyObject(copyObjRequest);
+        s3client.deleteObject(bucketName, srcKey);
+
+
+    }
     public void uploadObject(String bucketName, String key, String filePath) {
         if (s3client.doesBucketExistV2(bucketName)) {
             logger.info("Bucket name is not available. Creating bucket.");
