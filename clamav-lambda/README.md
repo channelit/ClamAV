@@ -10,7 +10,7 @@ docker build --platform=linux/amd64 . -t clamav
 ```
 #### Run local
 ```
-docker run --platform=linux/amd64 -e s3dstSecretKey=$s3dstSecretKey -e s3dstAccessKey=$s3dstAccessKey --name=lambda -p 9009:8080 clamav clamav.lambda.handler.Update
+docker run --platform=linux/amd64 -e s3dstSecretKey=$s3dstSecretKey -e s3dstAccessKey=$s3dstAccessKey --name=lambda -p 9009:8080 -u clamav clamav clamav.lambda.handler.Update
 curl -XPOST "http://localhost:9009/2015-03-31/functions/function/invocations" -d '{"task":"update"}'
 docker cp src/test/resources/eicar/ lambda:/var/task/eicar
 curl -XPOST "http://localhost:9009/2015-03-31/functions/function/invocations" -d '{"task":"scan", "file":"eicar"}'
