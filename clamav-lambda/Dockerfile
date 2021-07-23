@@ -27,9 +27,14 @@ COPY --from=clam-build /etc/pki/ca-trust/source/anchors/* /etc/pki/ca-trust/sour
 RUN sudo echo "DatabaseMirror database.clamav.net" > ${LAMBDA_TASK_ROOT}/freshclam.conf
 RUN sudo echo "CompressLocalDatabase yes" >> ${LAMBDA_TASK_ROOT}/freshclam.conf
 
-COPY target/classes ${LAMBDA_TASK_ROOT}
-COPY target/dependency/* ${LAMBDA_TASK_ROOT}/lib/
+#COPY target/classes ${LAMBDA_TASK_ROOT}
+#COPY target/dependency/* ${LAMBDA_TASK_ROOT}/lib/
 
-RUN sudo chown -R clamav:clamav ${LAMBDA_TASK_ROOT}
+#RUN yum install wget sudo tar -y
+#RUN wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
+#RUN sudo tar -C /usr/local -xf go1.13.4.linux-amd64.tar.gz
+#RUN export PATH=$PATH:/usr/local/go/bin
 
-USER clamav
+#RUN sudo chown -R clamav:clamav ${LAMBDA_TASK_ROOT}
+#
+#USER clamav
