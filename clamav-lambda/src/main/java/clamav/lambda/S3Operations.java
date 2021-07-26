@@ -7,41 +7,55 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import software.amazon.awssdk.services.s3.model.*;
 import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
+import software.amazon.awssdk.services.s3.model.Tag;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 public class S3Operations {
 
     private final AmazonS3 s3client;
+    private final S3Client s3ClientV2;
     private static final Logger logger = LoggerFactory.getLogger(S3Operations.class);
 
-    public S3Operations(String accessKey, String secretKey) {
+    public S3Operations(String accessKey, String secretKey, S3Client s3ClientV) {
         AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
-        s3client = AmazonS3ClientBuilder
+        this.s3client = AmazonS3ClientBuilder
                 .standard()
                 .withCredentials(new AWSStaticCredentialsProvider(credentials))
                 .withRegion(Regions.US_EAST_1)
                 .build();
+        this.s3ClientV2 = S3Client.builder().region(Region.US_EAST_1).build();
     }
 
     public S3Operations() {
-        s3client = AmazonS3ClientBuilder
+        this.s3client = AmazonS3ClientBuilder
                 .standard()
                 .withRegion(Regions.US_EAST_1)
                 .build();
+        this.s3ClientV2 = S3Client.builder().region(Region.US_EAST_1).build();
     }
 
     public void downloadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
@@ -54,7 +68,7 @@ public class S3Operations {
     }
 
     public void deleteFolder(String bucketName, String folderPath) throws InterruptedException {
-        for (S3ObjectSummary file : s3client.listObjects(bucketName, folderPath).getObjectSummaries()){
+        for (S3ObjectSummary file : s3client.listObjects(bucketName, folderPath).getObjectSummaries()) {
             s3client.deleteObject(bucketName, file.getKey());
         }
     }
@@ -77,14 +91,6 @@ public class S3Operations {
         System.out.println("Done uploading folder:bucket=" + bucketName + " prefix=" + prefix + " folderPath=" + folderPath);
     }
 
-    public void mooveObject(String bucketName, String srcKey, String oldFolderPath, String dstKey) throws InterruptedException {
-
-        CopyObjectRequest copyObjRequest = new CopyObjectRequest(bucketName, srcKey, bucketName, dstKey);
-        s3client.copyObject(copyObjRequest);
-        s3client.deleteObject(bucketName, srcKey);
-
-
-    }
     public void uploadObject(String bucketName, String key, String filePath) {
         if (s3client.doesBucketExistV2(bucketName)) {
             logger.info("Bucket name is not available. Creating bucket.");
@@ -93,7 +99,40 @@ public class S3Operations {
         s3client.putObject(bucketName, key, new File(filePath));
     }
 
-    public AmazonS3 getS3client(){
+    public void moveObject(String srcBucket, String dstBucket, String srcKey, String dstKey) {
+        CopyObjectRequest copyObjectRequest = CopyObjectRequest.builder()
+                .sourceBucket(srcBucket)
+                .sourceKey(srcKey)
+                .destinationBucket(dstBucket)
+                .destinationKey(dstKey)
+                .build();
+        s3ClientV2.copyObject(copyObjectRequest);
+        DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                .bucket(srcBucket)
+                .key(srcKey)
+                .build();
+        s3ClientV2.deleteObject(deleteObjectRequest);
+    }
+
+    public void setTag(AmazonS3 s3client, String srcBucket, String srcKey, Map<String, String> tags) {
+        GetObjectTaggingRequest getTaggingRequest = GetObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).build();
+        GetObjectTaggingResponse getObjectTaggingResponse = s3ClientV2.getObjectTagging(getTaggingRequest);
+        List<Tag> oldTags = getObjectTaggingResponse.tagSet();
+        Collection<Tag> newTags = new ArrayList<>();
+        tags.forEach((k, v) -> {
+            newTags.add(Tag.builder().key(k).value(v).build());
+        });
+        oldTags.forEach(t -> {
+                    if (!tags.containsKey(t.key())) {
+                        newTags.add(Tag.builder().key(t.key()).value(t.value()).build());
+                    }
+                }
+        );
+        Tagging tagging = Tagging.builder().tagSet(newTags).build();
+        PutObjectTaggingResponse putObjectTaggingResponse = s3ClientV2.putObjectTagging(PutObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).tagging(tagging).build());
+        System.out.println("Tags added :" + putObjectTaggingResponse.toString());
+    }
+    public AmazonS3 getS3client() {
         return this.s3client;
     }
 

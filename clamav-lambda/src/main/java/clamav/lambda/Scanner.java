@@ -34,7 +34,7 @@ public class Scanner {
                 logger.log(gson.toJson("Skipping:" + srcKey));
                 return "skipped:" + srcKey;
             }
-            setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
+            s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
 
             String folder = "/tmp";
             if (System.getenv().containsKey("folder")) {
@@ -66,9 +66,9 @@ public class Scanner {
             logger.log("result:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
             if (convertedObject.get("Infected files").getAsString().equals("0")) {
-                setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
+                s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
-                setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
+                s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
             logger.log(gson.toJson("Scanned:" + srcKey));
             boolean clearFile = new File(filePath).delete();
@@ -93,23 +93,4 @@ public class Scanner {
         return hasTag.get();
     }
 
-    private static void setTag(AmazonS3 s3client, String srcBucket, String srcKey, Map<String, String> tags) {
-        GetObjectTaggingRequest getTaggingRequest = new GetObjectTaggingRequest(srcBucket, srcKey);
-        GetObjectTaggingResult getTagsResult = s3client.getObjectTagging(getTaggingRequest);
-        List<Tag> objTags = getTagsResult.getTagSet();
-        tags.forEach((k, v) -> {
-            AtomicReference<Boolean> isDupe = new AtomicReference<>(false);
-            objTags.forEach(t -> {
-                        if (t.getKey().equals(k)) {
-                            t.setValue(v);
-                            isDupe.set(true);
-                        }
-                    }
-            );
-            if (!isDupe.get()) {
-                objTags.add(new Tag(k, v));
-            }
-        });
-        s3client.setObjectTagging(new SetObjectTaggingRequest(srcBucket, srcKey, new ObjectTagging(objTags)));
-    }
 }
