@@ -1,10 +1,7 @@
 package clamav.lambda;
 
-import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -14,9 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Scanner {
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -30,11 +25,11 @@ public class Scanner {
     public String scan(String srcBucket, String srcKey) {
         try {
             S3Operations s3Ops = new S3Operations();
-            if (hasTag(s3Ops.getS3client(), srcBucket, srcKey, "scan")) {
+            if (s3Ops.hasTag(srcBucket, srcKey, "scan")) {
                 logger.log(gson.toJson("Skipping:" + srcKey));
                 return "skipped:" + srcKey;
             }
-            s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "Started"));
+            s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "Started"));
 
             String folder = "/tmp";
             if (System.getenv().containsKey("folder")) {
@@ -66,9 +61,9 @@ public class Scanner {
             logger.log("result:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
             if (convertedObject.get("Infected files").getAsString().equals("0")) {
-                s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
+                s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
-                s3Ops.setTag(s3Ops.getS3client(), srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
+                s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
             logger.log(gson.toJson("Scanned:" + srcKey));
             boolean clearFile = new File(filePath).delete();
@@ -77,20 +72,6 @@ public class Scanner {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static boolean hasTag(AmazonS3 s3client, String srcBucket, String srcKey, String tagKey) {
-        GetObjectTaggingRequest getTaggingRequest = new GetObjectTaggingRequest(srcBucket, srcKey);
-        GetObjectTaggingResult getTagsResult = s3client.getObjectTagging(getTaggingRequest);
-        List<Tag> objTags = getTagsResult.getTagSet();
-        AtomicReference<Boolean> hasTag = new AtomicReference<>(false);
-        objTags.forEach(t -> {
-                    if (t.getKey().equals(tagKey)) {
-                        hasTag.set(true);
-                    }
-                }
-        );
-        return hasTag.get();
     }
 
 }

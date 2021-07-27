@@ -7,9 +7,9 @@ import com.amazonaws.event.ProgressListener;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.model.*;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.MultipleFileDownload;
 import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 import com.amazonaws.services.s3.transfer.TransferManager;
@@ -18,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
-import software.amazon.awssdk.services.s3.model.Tag;
+import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class S3Operations {
@@ -114,7 +110,7 @@ public class S3Operations {
         s3ClientV2.deleteObject(deleteObjectRequest);
     }
 
-    public void setTag(AmazonS3 s3client, String srcBucket, String srcKey, Map<String, String> tags) {
+    public void setTag(String srcBucket, String srcKey, Map<String, String> tags) {
         GetObjectTaggingRequest getTaggingRequest = GetObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).build();
         GetObjectTaggingResponse getObjectTaggingResponse = s3ClientV2.getObjectTagging(getTaggingRequest);
         List<Tag> oldTags = getObjectTaggingResponse.tagSet();
@@ -132,8 +128,16 @@ public class S3Operations {
         PutObjectTaggingResponse putObjectTaggingResponse = s3ClientV2.putObjectTagging(PutObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).tagging(tagging).build());
         System.out.println("Tags added :" + putObjectTaggingResponse.toString());
     }
-    public AmazonS3 getS3client() {
-        return this.s3client;
+
+    public boolean hasTag(String srcBucket, String srcKey, String tagKey) {
+        GetObjectTaggingRequest getObjectTaggingRequest = GetObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).build();
+        GetObjectTaggingResponse getObjectTaggingResponse = s3ClientV2.getObjectTagging(getObjectTaggingRequest);
+        return getObjectTaggingResponse.tagSet().stream().anyMatch(t->t.key().equalsIgnoreCase(tagKey));
     }
 
+    public String getTag(String srcBucket, String srcKey, String tagKey) {
+        GetObjectTaggingRequest getObjectTaggingRequest = GetObjectTaggingRequest.builder().bucket(srcBucket).key(srcKey).build();
+        GetObjectTaggingResponse getObjectTaggingResponse = s3ClientV2.getObjectTagging(getObjectTaggingRequest);
+        return getObjectTaggingResponse.tagSet().stream().filter(t->t.key().equalsIgnoreCase(tagKey)).map(t->t.value()).collect(Collectors.joining());
+    }
 }
