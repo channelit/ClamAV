@@ -1,0 +1,38 @@
+{
+  "Records": [
+    {
+      "eventVersion": "2.1",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-east-1",
+      "eventTime": "2021-07-29T15:53:09.306Z",
+      "eventName": "ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "A1OCYGEFBQ9JEF"
+      },
+      "requestParameters": {
+        "sourceIPAddress": "96.255.74.10"
+      },
+      "responseElements": {
+        "x-amz-request-id": "WTWM696NXG7KGZY2",
+        "x-amz-id-2": "aWfeSM6Dpq8F6nJLk6dNPTRHyNyUEsoPWkvPO8K5l1t2YUMV1N05jNew2pr7FO/XtQZPOC5eW6JSHWzDLX7oGf63gu/Z6PY+"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "s3-sqs-event",
+        "bucket": {
+          "name": "clamav-cits",
+          "ownerIdentity": {
+            "principalId": "A1OCYGEFBQ9JEF"
+          },
+          "arn": "arn:aws:s3:::clamav-cits"
+        },
+        "object": {
+          "key": "CoreES+copy+219.pdf",
+          "size": 6579333,
+          "eTag": "1551e5c5c7e2ad5e93b70e076f0bb1ac",
+          "sequencer": "006102CEE75EDCC598"
+        }
+      }
+    }
+  ]
+}
