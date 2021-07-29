@@ -140,4 +140,8 @@ public class S3Operations {
         GetObjectTaggingResponse getObjectTaggingResponse = s3ClientV2.getObjectTagging(getObjectTaggingRequest);
         return getObjectTaggingResponse.tagSet().stream().filter(t->t.key().equalsIgnoreCase(tagKey)).map(t->t.value()).collect(Collectors.joining());
     }
+
+    public AmazonS3 getS3client() {
+        return this.s3client;
+    }
 }
