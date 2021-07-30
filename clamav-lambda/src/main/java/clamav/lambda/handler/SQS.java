@@ -4,11 +4,8 @@ import clamav.lambda.Scanner;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.event.S3EventNotification;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class SQS implements RequestHandler<SQSEvent, String> {
     @Override
