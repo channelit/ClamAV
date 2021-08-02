@@ -11,15 +11,14 @@ public class SQS implements RequestHandler<SQSEvent, String> {
     @Override
     public String handleRequest(SQSEvent sqsEvent, Context context) {
         LambdaLogger logger = context.getLogger();
-        logger.log("\rProcessing Event:" + sqsEvent.toString());
+        logger.log("\rProcessing Event: " + sqsEvent.toString());
         sqsEvent.getRecords().stream().forEach(
                 sqsRecord -> {
-                    logger.log("\rProcessing SQSRecords:" + sqsRecord.getBody());
                     S3EventNotification s3EventNotification = S3EventNotification.parseJson(sqsRecord.getBody());
-                    logger.log("\rReceived S3EventRecords:" + s3EventNotification.getRecords());
+                    logger.log("\rReceived S3EventRecords: " + s3EventNotification.getRecords().size());
                     s3EventNotification.getRecords().forEach(
                             s3Record -> {
-                                logger.log("\rProcessing s3Record:" + s3Record);
+                                logger.log("\rProcessing s3: " + s3Record.getS3());
                                 String srcBucket = s3Record.getS3().getBucket().getName();
                                 String dstBucket = System.getenv("dstBucket");
                                 String srcKey = s3Record.getS3().getObject().getUrlDecodedKey();

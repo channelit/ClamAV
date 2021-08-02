@@ -16,12 +16,15 @@ import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -72,10 +75,13 @@ public class S3Operations {
     public void downloadObject(String bucketName, String srcFilePath, String dstFilePath) throws IOException {
         Path dst = new File(dstFilePath).toPath();
         Files.deleteIfExists(dst);
-        S3Object s3object = s3client.getObject(bucketName, srcFilePath);
-        S3ObjectInputStream inputStream = s3object.getObjectContent();
+        ResponseBytes<GetObjectResponse> getObjectResponseResponseBytes = s3ClientV2.getObjectAsBytes(GetObjectRequest.builder().bucket(bucketName).key(srcFilePath).build());
+        byte[] data = getObjectResponseResponseBytes.asByteArray();
         Files.createDirectories(dst.getParent());
-        Files.copy(inputStream, dst);
+        File localFile = new File(dstFilePath);
+        OutputStream os = new FileOutputStream(localFile);
+        os.write(data);
+        os.close();
     }
 
     public void uploadFolder(String bucketName, String prefix, String folderPath) throws InterruptedException {
