@@ -24,7 +24,7 @@ public class StreamController {
     @Value("${clamav.port}")
     private int PORT;
 
-    @EventListener(ApplicationReadyEvent.class)
+//    @EventListener(ApplicationReadyEvent.class)
     public void check() throws Exception {
         System.out.println(ping());
         final InputStream inputStream =
