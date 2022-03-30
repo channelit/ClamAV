@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.Test;
+import software.amazon.awssdk.services.s3.S3Client;
 
 public class S3Test {
 
@@ -28,6 +29,7 @@ public class S3Test {
 
     @Test
     public void ReScanS3() {
+        S3Client s3ClientV = null;
         S3Operations s3Ops = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"), s3ClientV);
         AmazonS3 client = s3Ops.getS3client();
         for ( S3ObjectSummary summary : S3Objects.withPrefix(client, "channel-test-s3", "Chief Information Officer - Solutions and Partners 4 (CIO-SP4)/") ) {
