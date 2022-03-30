@@ -1,67 +1,55 @@
 package biz.cits.clamav;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSSessionCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.lambda.AWSLambda;
-import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
-import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
-import com.amazonaws.services.lambda.model.InvocationType;
-import com.amazonaws.services.lambda.model.InvokeRequest;
-import com.amazonaws.services.lambda.model.InvokeResult;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent;
-import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.lambda.model.InvokeRequest;
+import software.amazon.awssdk.services.lambda.model.InvokeResponse;
+import software.amazon.awssdk.services.lambda.model.LambdaException;
 
 @RestController
 public class VirusScanController {
 
-    @Value("${lambda.awsSecretAccessKey}")
-    private static String awsAccessKeyId;
+    @Value("${lambda.awsAccessKeyId}")
+    private String awsAccessKeyId;
 
     @Value("${lambda.awsSecretAccessKey}")
-    private static String awsSecretAccessKey;
+    private String awsSecretAccessKey;
 
     @Value("${lambda.functionName}")
-    private static String functionName;
+    private String functionName;
 
-    @GetMapping("/")
+    @GetMapping("/scan")
     public String scanFile() {
 
-        AWSCredentials awsCredentials = new BasicAWSCredentials(awsAccessKeyId, awsSecretAccessKey);
-
-        InvokeRequest lambdaRequest = new InvokeRequest()
-                .withFunctionName(functionName)
-                .withPayload("inputJSON");
-        lambdaRequest.setInvocationType(InvocationType.RequestResponse);
-
-        AWSLambda lambda = AWSLambdaClientBuilder.standard()
-                .withRegion(Regions.US_EAST_1)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials)).build();
-
-        InvokeResult lmbResult = lambda.invoke(lambdaRequest);
-
-        String resultJSON = new String(lmbResult.getPayload().array(), StandardCharsets.UTF_8);
-
-        System.out.println(resultJSON);
-
+        Region region = Region.US_EAST_1;
+        LambdaClient awsLambda = LambdaClient.builder()
+                .region(region)
+                .build();
+        InvokeResponse res = null;
+        try {
+            String json = "{\n" +
+                    "   \"s3Object\":\"True\",\n" +
+                    "   \"srcBucket\":\"arn:aws:s3:us-east-1:122936777114:accesspoint/clamav\",\n" +
+                    "   \"srcKey\":\"JPG-01.jpg\"\n" +
+                    "}";
+            SdkBytes payload = SdkBytes.fromUtf8String(json);
+            System.out.println(payload);
+            InvokeRequest request = InvokeRequest.builder()
+                    .functionName(functionName)
+                    .payload(payload)
+                    .build();
+            res = awsLambda.invoke(request);
+            String value = res.payload().asUtf8String();
+            System.out.println(value);
+        } catch (LambdaException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
         return "Greetings from Spring Boot!";
     }
 
-    private SQSEvent buildEvent() {
-        S3EventNotification.S3EventNotificationRecord s3EventNotificationRecord = new S3EventNotification.S3EventNotificationRecord();
-        S3EventNotification s3EventNotification = new S3EventNotification();
-        s3EventNotification.getRecords().add()
-        SQSEvent.SQSMessage sqsMessage = new SQSEvent.SQSMessage();
-        sqsMessage.setBody();
-        SQSEvent sqsEvent = new SQSEvent();
-        sqsEvent.setRecords()
-    }
 }
