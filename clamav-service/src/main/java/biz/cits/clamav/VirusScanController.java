@@ -33,8 +33,8 @@ public class VirusScanController {
         try {
             String json = "{\n" +
                     "   \"s3Object\":\"True\",\n" +
-                    "   \"srcBucket\":\"arn:aws:s3:us-east-1:122936777114:accesspoint/clamav\",\n" +
-                    "   \"srcKey\":\"JPG-01.jpg\"\n" +
+                    "   \"srcBucket\":\"clamav-cits\",\n" +
+                    "   \"srcKey\":\"Downloads/20190828_115521.jpg\"\n" +
                     "}";
             SdkBytes payload = SdkBytes.fromUtf8String(json);
             System.out.println(payload);
