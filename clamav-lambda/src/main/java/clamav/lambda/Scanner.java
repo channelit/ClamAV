@@ -26,7 +26,7 @@ public class Scanner {
         try {
             S3Operations s3Ops = new S3Operations();
             if (s3Ops.hasTag(srcBucket, srcKey, "scan")) {
-                logger.log(gson.toJson("Skipping:" + srcKey));
+                logger.log(gson.toJson("\rSkipping:" + srcKey));
                 return "skipped:" + srcKey;
             }
             s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "Started"));
@@ -35,39 +35,39 @@ public class Scanner {
             if (System.getenv().containsKey("folder")) {
                 folder = System.getenv("folder");
             }
-            logger.log("Using folder:" + folder);
+            logger.log("\rUsing folder:" + folder);
             String defFolder = folder + "/clamav_defs";
-            logger.log("Using definition folder:" + defFolder);
+            logger.log("\rUsing definition folder:" + defFolder);
             String filePath = folder + "/" + srcKey.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
             s3Ops.downloadObject(srcBucket, srcKey, filePath);
-            logger.log("Downloaded file:" + filePath);
+            logger.log("\rDownloaded file:" + filePath);
 
             if (System.getenv().containsKey("useS3") && System.getenv("useS3").equalsIgnoreCase("true")) {
-                logger.log("Using definitions from S3 : " + System.getenv("useS3"));
+                logger.log("\rUsing definitions from S3 : " + System.getenv("useS3"));
                 String storeBucket = System.getenv("storeBucket");
-                logger.log("Downloading definitions from S3 to folder:" + folder);
+                logger.log("\rDownloading definitions from S3 to folder:" + folder);
                 s3Ops.downloadFolder(storeBucket, "clamav_defs", folder);
-                logger.log("Downloaded definitions from S3 to folder:" + folder);
+                logger.log("\rDownloaded definitions from S3 to folder:" + folder);
             } else if (Files.notExists(Paths.get(defFolder))) {
-                logger.log("Definitions not found. Downloading from mirror to folder:" + defFolder);
+                logger.log("\rDefinitions not found. Downloading from mirror to folder:" + defFolder);
                 Files.createDirectories(Path.of(defFolder));
                 String response = Clamav.update(defFolder);
                 logger.log(response);
             } else {
-                logger.log("Using existing virus definitions in folder:" + defFolder);
+                logger.log("\rUsing existing virus definitions in folder:" + defFolder);
             }
 
             String result = Clamav.scan(filePath, defFolder);
-            logger.log("result:" + result);
+            logger.log("\rresult:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
-            if (convertedObject.get("Infected files").getAsString().equals("0")) {
+            if (convertedObject.get("\rInfected files").getAsString().equals("0")) {
                 s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
                 s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));
             }
-            logger.log(gson.toJson("Scanned:" + srcKey));
+            logger.log(gson.toJson("\rScanned:" + srcKey));
             boolean clearFile = new File(filePath).delete();
-            logger.log("Temp file deleted:" + clearFile);
+            logger.log("\rTemp file deleted:" + clearFile);
             return "Ok";
         } catch (Exception e) {
             throw new RuntimeException(e);

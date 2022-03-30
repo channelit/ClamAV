@@ -26,9 +26,9 @@ public class Stream implements RequestStreamHandler {
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.US_ASCII)));
         try {
             HashMap event = gson.fromJson(reader, HashMap.class);
-            logger.log("STREAM TYPE: " + inputStream.getClass().toString());
-            logger.log("EVENT TYPE: " + event.getClass().toString());
-            logger.log("EVENT: " + event);
+            logger.log("\rSTREAM TYPE: " + inputStream.getClass().toString());
+            logger.log("\rEVENT TYPE: " + event.getClass().toString());
+            logger.log("\rEVENT: " + event);
             if (event.containsKey("s3Object")) {
                 String srcBucket = event.get("srcBucket").toString();
                 String srcKey = event.get("srcKey").toString();
@@ -40,7 +40,7 @@ public class Stream implements RequestStreamHandler {
             } else {
                 SQSEvent sqsEvent = new SQSEvent();
                 JsonElement jsonTree =  gson.toJsonTree(event);
-                logger.log("EVENT JSON: " + jsonTree);
+                logger.log("\rEVENT JSON: " + jsonTree);
                 JsonArray recordsArray = jsonTree.getAsJsonObject().get("Records").getAsJsonArray();
                 ArrayList<SQSEvent.SQSMessage> records = gson.fromJson(recordsArray, sqsMessageArray);
                 sqsEvent.setRecords(records);
@@ -63,7 +63,7 @@ public class Stream implements RequestStreamHandler {
                 );
             }
             if (writer.checkError()) {
-                logger.log("WARNING: Writer encountered an error.");
+                logger.log("\rWARNING: Writer encountered an error.");
             }
         } catch (IllegalStateException | JsonSyntaxException exception) {
             logger.log(exception.toString());
