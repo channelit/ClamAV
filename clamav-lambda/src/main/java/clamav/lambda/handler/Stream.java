@@ -1,17 +1,18 @@
 package clamav.lambda.handler;
 
 import clamav.lambda.Scanner;
+import com.amazonaws.lambda.thirdparty.com.google.gson.reflect.TypeToken;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.event.S3EventNotification;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Stream implements RequestStreamHandler {
@@ -19,6 +20,7 @@ public class Stream implements RequestStreamHandler {
 
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        Type sqsMessageArray = new TypeToken<ArrayList<SQSEvent.SQSMessage>>(){}.getType();
         LambdaLogger logger = context.getLogger();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.US_ASCII)));
@@ -36,8 +38,13 @@ public class Stream implements RequestStreamHandler {
                 logger.log("\rResponse: " + response);
                 writer.write(response);
             } else {
-                SQSEvent sqsEvent = gson.fromJson(gson.toJson(event), SQSEvent.class);
-                sqsEvent.getRecords().stream().forEach(
+                SQSEvent sqsEvent = new SQSEvent();
+                JsonElement jsonTree =  gson.toJsonTree(event);
+                logger.log("EVENT JSON: " + jsonTree);
+                JsonArray recordsArray = jsonTree.getAsJsonObject().get("Records").getAsJsonArray();
+                ArrayList<SQSEvent.SQSMessage> records = gson.fromJson(recordsArray, sqsMessageArray);
+                sqsEvent.setRecords(records);
+                sqsEvent.getRecords().forEach(
                         sqsRecord -> {
                             S3EventNotification s3EventNotification = S3EventNotification.parseJson(sqsRecord.getBody());
                             logger.log("\rReceived S3EventRecords: " + s3EventNotification.getRecords().size());
