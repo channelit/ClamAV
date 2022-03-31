@@ -44,13 +44,11 @@ public class VirusScanController {
                     .payload(payload)
                     .build();
             res = awsLambda.invoke(request);
-            String value = res.payload().asUtf8String();
-            System.out.println(value);
         } catch (LambdaException e) {
             System.err.println(e.getMessage());
             System.exit(1);
         }
-        return "Greetings from Spring Boot!";
+        return res.payload().asUtf8String();
     }
 
 }
