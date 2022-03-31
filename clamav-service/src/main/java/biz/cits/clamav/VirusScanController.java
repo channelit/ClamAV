@@ -31,11 +31,12 @@ public class VirusScanController {
                 .region(region)
                 .build();
         InvokeResponse res = null;
+        String json = "";
         try {
-            String json = "{\n" +
+            json = "{\n" +
                     "   \"s3Object\":\"True\",\n" +
-                    "   \"srcBucket\":\" + bucket + \",\n" +
-                    "   \"srcKey\":\" + key + \"\n" +
+                    "   \"srcBucket\":\"" + bucket + "\",\n" +
+                    "   \"srcKey\":\"" + key + "\"\n" +
                     "}";
             SdkBytes payload = SdkBytes.fromUtf8String(json);
             System.out.println(payload);
@@ -48,7 +49,7 @@ public class VirusScanController {
             System.err.println(e.getMessage());
             System.exit(1);
         }
-        return res.payload().asUtf8String();
+        return json + "\n" + res.payload().asUtf8String();
     }
 
 }
