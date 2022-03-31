@@ -24,13 +24,13 @@ public class VirusScanController {
     private String functionName;
 
     @GetMapping("/scan")
-    public String scanFile(@RequestParam String bucket, @RequestParam String key) {
+    public String scanFile(@RequestParam("bucket") String bucket, @RequestParam("key") String key) {
 
         Region region = Region.US_EAST_1;
         LambdaClient awsLambda = LambdaClient.builder()
                 .region(region)
                 .build();
-        InvokeResponse res = null;
+        String response;
         String json = "";
         try {
             json = "{\n" +
@@ -44,12 +44,15 @@ public class VirusScanController {
                     .functionName(functionName)
                     .payload(payload)
                     .build();
-            res = awsLambda.invoke(request);
+            InvokeResponse res = awsLambda.invoke(request);
+            response = json + "\n" + res.payload().asUtf8String();
+            System.out.println(response);
         } catch (LambdaException e) {
             System.err.println(e.getMessage());
-            System.exit(1);
+            response = e.getMessage();
+
         }
-        return json + "\n" + res.payload().asUtf8String();
+        return response;
     }
 
 }
