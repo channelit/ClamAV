@@ -2,6 +2,7 @@ package biz.cits.clamav;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.regions.Region;
@@ -23,7 +24,7 @@ public class VirusScanController {
     private String functionName;
 
     @GetMapping("/scan")
-    public String scanFile() {
+    public String scanFile(@RequestParam String bucket, @RequestParam String key) {
 
         Region region = Region.US_EAST_1;
         LambdaClient awsLambda = LambdaClient.builder()
@@ -33,8 +34,8 @@ public class VirusScanController {
         try {
             String json = "{\n" +
                     "   \"s3Object\":\"True\",\n" +
-                    "   \"srcBucket\":\"clamav-cits\",\n" +
-                    "   \"srcKey\":\"Downloads/20190828_115521.jpg\"\n" +
+                    "   \"srcBucket\":\" + bucket + \",\n" +
+                    "   \"srcKey\":\" + key + \"\n" +
                     "}";
             SdkBytes payload = SdkBytes.fromUtf8String(json);
             System.out.println(payload);
