@@ -2,7 +2,7 @@ package clamav.lambda;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class ClamavTest {
 

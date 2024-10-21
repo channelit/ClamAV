@@ -1,41 +1,26 @@
-FROM centos:8 AS clam-build
+FROM registry.access.redhat.com/ubi8/ubi:latest AS clam-build
 
-RUN dnf --enablerepo=extras install epel-release -y
-RUN dnf update -y
-RUN dnf install clamav clamav-update clamd -y
+ENV CLAM_VERSION=1.4.1
 
-FROM amazon/aws-lambda-java
+RUN mkdir -p /opt/clamav
+RUN curl -LSo /opt/clamav/clamav.rpm https://www.clamav.net/downloads/production/clamav-${CLAM_VERSION}.linux.x86_64.rpm
+RUN yum localinstall -y --disableplugin=subscription-manage /opt/clamav/clamav.rpm
 
-RUN yum install shadow-utils -y
-RUN yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm -y
-RUN yum install clamav clamav-update clamd -y
-ENV LAMBDA_TASK_ROOT="/var/task"
+FROM public.ecr.aws/lambda/java:21
 
-RUN yum install ca-certificates
-RUN update-ca-trust
-RUN update-ca-trust force-enable
+ENV	LAMBDA_TASK_ROOT="/var/task"
 
-RUN yum install sudo -y
+COPY --from=clam-build /usr/local/bin/clamscan ${LAMBDA_TASK_ROOT}
+COPY --from=clam-build /usr/local/bin/freshclam ${LAMBDA_TASK_ROOT}
+COPY --from=clam-build /usr/local/lib64/*.so.* ${LAMBDA_TASK_ROOT}/
+COPY --from=clam-build /etc/pki/ca-trust/source/anchors/* /etc/pki/ca-trust/source/anchors/
+COPY --from=clam-build /opt /opt
 
-RUN /usr/sbin/groupadd clamav
-RUN /usr/sbin/useradd clamav -g clamav
-
-RUN cp /usr/bin/clamscan ${LAMBDA_TASK_ROOT}
-RUN cp /usr/bin/freshclam ${LAMBDA_TASK_ROOT}
-RUN cp /usr/lib64/*.so.* ${LAMBDA_TASK_ROOT}/
-#RUN cp /etc/pki/ca-trust/source/anchors/* /etc/pki/ca-trust/source/anchors/
-
-RUN sudo echo "DatabaseMirror database.clamav.net" > ${LAMBDA_TASK_ROOT}/freshclam.conf
-RUN sudo echo "CompressLocalDatabase yes" >> ${LAMBDA_TASK_ROOT}/freshclam.conf
+RUN echo "DatabaseMirror database.clamav.net" > ${LAMBDA_TASK_ROOT}/freshclam.conf
+RUN echo "CompressLocalDatabase yes" >> ${LAMBDA_TASK_ROOT}/freshclam.conf
+RUN echo "DatabaseOwner root" >> ${LAMBDA_TASK_ROOT}/freshclam.conf
 
 COPY target/classes ${LAMBDA_TASK_ROOT}
 COPY target/dependency/* ${LAMBDA_TASK_ROOT}/lib/
 
-#RUN yum install wget sudo tar -y
-#RUN wget https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz
-#RUN sudo tar -C /usr/local -xf go1.13.4.linux-amd64.tar.gz
-#RUN export PATH=$PATH:/usr/local/go/bin
-
-RUN sudo chown -R clamav:clamav ${LAMBDA_TASK_ROOT}
-#
-USER clamav
+CMD ["clamav.lambda.handler.Stream"]

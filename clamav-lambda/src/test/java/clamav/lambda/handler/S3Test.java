@@ -1,17 +1,12 @@
 package clamav.lambda.handler;
 
-import clamav.lambda.S3Operations;
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.tests.EventLoader;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.iterable.S3Objects;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.junit.Test;
-import software.amazon.awssdk.services.s3.S3Client;
 
 public class S3Test {
 
@@ -25,17 +20,6 @@ public class S3Test {
         if (output != null) {
             System.out.println(output.toString());
         }
-    }
-
-    @Test
-    public void ReScanS3() {
-        S3Client s3ClientV = null;
-        S3Operations s3Ops = new S3Operations(System.getenv("s3dstAccessKey"), System.getenv("s3dstSecretKey"), s3ClientV);
-        AmazonS3 client = s3Ops.getS3client();
-        for ( S3ObjectSummary summary : S3Objects.withPrefix(client, "channel-test-s3", "Chief Information Officer - Solutions and Partners 4 (CIO-SP4)/") ) {
-            System.out.printf("Object with key '%s' Has tag '%s'\n", summary.getKey(), summary.getETag());
-        }
-
     }
 
     private Context getFakeContext() {
