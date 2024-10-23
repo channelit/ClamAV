@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -50,10 +49,13 @@ public class Clamav {
         Gson gson = new GsonBuilder()
                 .setPrettyPrinting()
                 .create();
-        Set<String> keys= new HashSet<>();
-        return gson.toJson(Arrays.stream(
-                result.split("\n")).map(line -> line.split(":"))
+        logger.info("Converting :{}", result);
+        Set<String> keys = new HashSet<>();
+        String convertedResuls = gson.toJson(Arrays.stream(
+                        result.split("\n")).map(line -> line.split(":"))
                 .filter(a -> !a[0].isEmpty() && keys.add(a[0]))
                 .collect(Collectors.toMap(a -> a[0], a -> a.length > 1 ? a[1].trim() : "")));
+        logger.info("Converted :{}", convertedResuls);
+        return convertedResuls;
     }
 }

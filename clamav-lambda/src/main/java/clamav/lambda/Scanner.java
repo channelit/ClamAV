@@ -60,7 +60,8 @@ public class Scanner {
             String result = Clamav.scan(filePath, defFolder);
             logger.log("\rresult:" + result);
             JsonObject convertedObject = new Gson().fromJson(Clamav.resultToJson(result), JsonObject.class);
-            if (convertedObject.get("\rInfected files").getAsString().equals("0")) {
+            logger.log("convertedObject: " + convertedObject);
+            if (convertedObject.get("Infected files").getAsString().equals("0")) {
                 s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "ok"));
             } else {
                 s3Ops.setTag(srcBucket, srcKey, Map.of("scan", "completed", "result", "infected"));

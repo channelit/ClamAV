@@ -9,6 +9,7 @@ resource "aws_lambda_function" "app_lambda_function" {
     variables = {
       S3_BUCKET_NAME          = aws_s3_bucket.main.bucket
       EFS_PATH                = "/mnt/lambda"
+      folder                  = "/mnt/lambda"
       REPORT_SQS_URL          = aws_sqs_queue.report.url
       KMS_ENDPOINT            = "https://${aws_vpc_endpoint.kms.arn}"
       #       KEY_CLIENT_ID           = aws_secretsmanager_secret.client_id.name
